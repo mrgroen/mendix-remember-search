@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<widget id="RememberSearch.widget.RememberSearch" needsEntityContext="false" xmlns="http://www.mendix.com/widget/1.0/">
+    <name>Remember search</name>
+    <description>Remembers the user's last search.</description>
+
+    <icon />
+
+    <properties>
+        <property key="searchAutomatically" type="boolean" defaultValue="true">
+            <caption>Search automatically</caption>
+            <category>Configuration</category>
+            <description>Yes - run a search; No - only fill the search form</description>
+        </property>
+    </properties>
+</widget>
+

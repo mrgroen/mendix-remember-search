@@ -4,9 +4,9 @@
     ========================
 
     @file      : RememberSearch.js
-    @version   : 0.1
+    @version   : 1.1
     @author    : Joost Verhoog
-    @date      : Tue, 25 Apr 2017 10:45:55 GMT
+    @date      : Mon, 12 Jun 2017 13:00:00 GMT
     @copyright : Mendix 2
     @license   : Apache 2
 
@@ -15,7 +15,6 @@
     Remembers the user's last search.
 */
 
-// Required module list. Remove unnecessary modules, you can always get them back from the boilerplate.
 define([
     "dojo/_base/declare",
     "mxui/widget/_WidgetBase",
@@ -114,32 +113,38 @@ define([
                 });
                 preventSetCookie = false;
             };
-
+            
+            var saveSearch = function (elem) {
+                if (preventSetCookie)
+                    return;
+                var searchBar = getSearchBar(elem);
+                var cookieName = getCookieName(searchBar);
+                var values = [];
+                searchBar.find('input, textarea').each(function () {
+                    values.push($(this).val());
+                });
+                searchBar.find('select').each(function () {
+                    values.push($(this).find('option:selected').text());
+                });
+                document.cookie = cookieName + '=' + encodeURIComponent(JSON.stringify(values));
+            };
+          
             $(function() {
                 // Search button sets a cookie
                 $('.mx-grid-search-button').click(function () {
-                    if (preventSetCookie)
-                        return;
-                    var searchBar = getSearchBar($(this));
-                    var cookieName = getCookieName(searchBar);
-                    var values = [];
-                    searchBar.find('input, textarea').each(function () {
-                        values.push($(this).val());
-                    });
-                    searchBar.find('select').each(function () {
-                        values.push($(this).find('option:selected').text());
-                    });
-                    document.cookie = cookieName + '=' + encodeURIComponent(JSON.stringify(values));
+                  saveSearch($(this));
                 });
-
+                // Pressing enter sets the cookie, too
+                $('.mx-grid-search-inputs .form-control').keypress(function (event) {
+                    if (event.which == 13)
+                        saveSearch($(this));
+                });
                 // Reset button clears the cookie
                 $('.mx-grid-reset-button').click(function () {
                     var searchBar = getSearchBar($(this));
                     var cookieName = getCookieName(searchBar);
                     document.cookie = cookieName + '=null';
                 });
-                
-                setTimeout(fillForm, 1);
             });
 
             setTimeout(fillForm, 1);

@@ -4,54 +4,51 @@
     ========================
 
     @file      : RememberSearch.js
-    @version   : 1.1
+    @version   : 1.2.0
     @author    : Joost Verhoog
     @date      : Mon, 12 Jun 2017 13:00:00 GMT
-    @copyright : Mendix 2
-    @license   : Apache 2
+    @copyright : Mendix
+    @license   : Apache 2.0
 
     Documentation
     ========================
     Remembers the user's last search.
+
+    Modified by
+    ========================
+    Marcus Groen
 */
 
 define([
     "dojo/_base/declare",
     "mxui/widget/_WidgetBase",
-
     "mxui/dom",
     "dojo/dom-style",
     "dojo/dom-attr",
     "dojo/dom-construct",
     "dojo/_base/lang",
-    "dijit/layout/LinkPane"
-], function(declare, _WidgetBase, dom, domStyle, domAttr, domConstruct, lang, LinkPane) {
+    "dijit/layout/LinkPane",
+    "RememberSearch/lib/jquery-1.12.4"
+], function (declare, _WidgetBase, dom, domStyle, domAttr, domConstruct, lang, LinkPane, _jQuery) {
     "use strict";
 
     return declare("RememberSearch.widget.RememberSearch", [_WidgetBase], {
 
         _objectChangeHandler: null,
 
-        postCreate: function() {
+        startup: function () {
+            logger.debug(this.id + ".startup");
+            this._execute();
+        },
+
+        postCreate: function () {
             logger.debug(this.id + ".postCreate");
         },
 
-        startup: function() {
-            logger.debug(this.id + ".startup");
-            this.executeCode();
-        },
-
-        executeCode: function() {
-            logger.debug(this.id + ".executeCode");
-            require([
-                "RememberSearch/lib/jquery-1.11.2"
-            ], lang.hitch(this, this.execute));
-        },
-
-        update: function(obj, callback) {
+        update: function (obj, callback) {
             logger.debug(this.id + ".update");
             if (this.refreshOnContextChange) {
-                this.executeCode();
+                this._execute();
 
                 if (this.refreshOnContextUpdate) {
                     if (this._objectChangeHandler !== null) {
@@ -60,8 +57,8 @@ define([
                     if (obj) {
                         this._objectChangeHandler = this.subscribe({
                             guid: obj.getGuid(),
-                            callback: lang.hitch(this, function() {
-                                this.executeCode();
+                            callback: lang.hitch(this, function () {
+                                this._execute();
                             })
                         });
                     }
@@ -71,7 +68,7 @@ define([
             this._executeCallback(callback, "update");
         },
 
-        execute: function() {
+        _execute: function () {
             var getSearchBar = function (elem) {
                 return elem.parents('.mx-grid-searchbar');
             };
@@ -79,32 +76,32 @@ define([
             var getCookieName = function (searchBar) {
                 return 'searchValues_' + searchBar.parent().attr('mxid');
             };
-            
+
             var preventSetCookie = false;
             var searchAutomatically = this.searchAutomatically;
-            
+
             var fillForm = function () {
                 preventSetCookie = true;
                 // check if cookie exists, and if so, execute search
-                $('.mx-grid-searchbar').each(function () {
-                    var searchBar = $(this);
+                _jQuery('.mx-grid-searchbar').each(function () {
+                    var searchBar = _jQuery(this);
                     var cookieName = getCookieName(searchBar);
                     var regexp = '(?:(?:^|.*;\\s*)' + cookieName + '\\s*\\=\\s*([^;]*).*$)|^.*$';
                     var cookieValue = document.cookie.replace(new RegExp(regexp), "$1");
-                    if (!cookieValue) 
+                    if (!cookieValue)
                         return;
                     var values = JSON.parse(decodeURIComponent(cookieValue));
-                    if (!values) 
+                    if (!values)
                         return;
                     searchBar.find('input, textarea').each(function () {
-                        if ($(this).val())
+                        if (_jQuery(this).val())
                             return;
-                        $(this).val(values.shift());
+                        _jQuery(this).val(values.shift());
                     });
                     searchBar.find('select').each(function () {
-                        if ($(this).val())
+                        if (_jQuery(this).val())
                             return;
-                        $(this).val($(this).find('option:contains(\'' + values.shift() + '\')').attr('value'));
+                        _jQuery(this).val(_jQuery(this).find('option:contains(\'' + values.shift() + '\')').attr('value'));
                     });
                     searchBar.show();
                     if (searchAutomatically) {
@@ -113,7 +110,7 @@ define([
                 });
                 preventSetCookie = false;
             };
-            
+
             var saveSearch = function (elem) {
                 if (preventSetCookie)
                     return;
@@ -121,27 +118,27 @@ define([
                 var cookieName = getCookieName(searchBar);
                 var values = [];
                 searchBar.find('input, textarea').each(function () {
-                    values.push($(this).val());
+                    values.push(_jQuery(this).val());
                 });
                 searchBar.find('select').each(function () {
-                    values.push($(this).find('option:selected').text());
+                    values.push(_jQuery(this).find('option:selected').text());
                 });
                 document.cookie = cookieName + '=' + encodeURIComponent(JSON.stringify(values));
             };
-          
-            $(function() {
+
+            _jQuery(function () {
                 // Search button sets a cookie
-                $('.mx-grid-search-button').click(function () {
-                  saveSearch($(this));
+                _jQuery('.mx-grid-search-button').click(function () {
+                    saveSearch(_jQuery(this));
                 });
                 // Pressing enter sets the cookie, too
-                $('.mx-grid-search-inputs .form-control').keypress(function (event) {
+                _jQuery('.mx-grid-search-inputs .form-control').keypress(function (event) {
                     if (event.which == 13)
-                        saveSearch($(this));
+                        saveSearch(_jQuery(this));
                 });
                 // Reset button clears the cookie
-                $('.mx-grid-reset-button').click(function () {
-                    var searchBar = getSearchBar($(this));
+                _jQuery('.mx-grid-reset-button').click(function () {
+                    var searchBar = getSearchBar(_jQuery(this));
                     var cookieName = getCookieName(searchBar);
                     document.cookie = cookieName + '=null';
                 });
@@ -149,7 +146,7 @@ define([
 
             setTimeout(fillForm, 1);
         },
-        
+
         _executeCallback: function (cb, from) {
             logger.debug(this.id + "._executeCallback" + (from ? " from " + from : ""));
             if (cb && typeof cb === "function") {
